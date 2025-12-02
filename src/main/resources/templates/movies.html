@@ -3,21 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Movies This Month</title>
+    <title>Free Movies This Month - Ahoy Matey!</title>
     <link rel="stylesheet" th:href="@{/css/movies.css}">
 </head>
 <body>
     <div class="container">
-        <h1>Free Movies This Month</h1>
-        <div class="movies-grid">
+        <h1>🏴‍☠️ Free Movies This Month 🏴‍☠️</h1>
+        
+        <!-- Pirate-themed Search Form -->
+        <div class="search-container" th:classappend="${searchPerformed} ? 'search-active' : ''">
+            <h2 class="search-title">Chart Yer Course Through Our Movie Seas!</h2>
+            <form class="search-form" method="get" action="/movies">
+                <div class="search-input-group">
+                    <input type="text" 
+                           name="name" 
+                           class="search-input" 
+                           placeholder="🎬 Search by movie name, ye savvy sailor..."
+                           th:value="${searchName}">
+                    
+                    <input type="number" 
+                           name="id" 
+                           class="search-input" 
+                           placeholder="🗺️ Enter treasure map ID..."
+                           th:value="${searchId}"
+                           min="1">
+                    
+                    <input type="text" 
+                           name="genre" 
+                           class="search-input" 
+                           placeholder="⚔️ Adventure type (genre)..."
+                           th:value="${searchGenre}">
+                </div>
+                
+                <div class="search-buttons">
+                    <button type="submit" class="search-btn">🔍 Hunt for Treasure!</button>
+                    <a href="/movies" class="search-btn clear-btn">🧭 Show All Movies</a>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Search Results Messages -->
+        <div th:if="${searchError}" class="search-message error">
+            <span th:text="${searchError}">Error message</span>
+        </div>
+        
+        <div th:if="${searchMessage and !searchError}" 
+             class="search-message" 
+             th:classappend="${searchResultCount == 0} ? 'no-results' : 'success'">
+            <span th:text="${searchMessage}">Search message</span>
+        </div>
+        
+        <!-- Results Counter -->
+        <div th:if="${searchPerformed and !searchError}" class="results-counter">
+            <span th:if="${searchResultCount > 0}" 
+                  th:text="'Displaying ' + ${searchResultCount} + ' movie' + (${searchResultCount} == 1 ? '' : 's') + ' from our treasure chest'">
+                Results count
+            </span>
+            <span th:if="${searchResultCount == 0}">
+                No movies found in our treasure chest with those search terms, matey!
+            </span>
+        </div>
+        
+        <!-- Movies Grid -->
+        <div class="movies-grid" th:if="${movies != null and !movies.empty}">
             <div class="movie-card" th:each="movie : ${movies}">
                 <div class="movie-icon" th:text="${movie.icon}">🎬</div>
                 <h3 th:text="${movie.movieName}">Movie Title</h3>
                 <div class="movie-details">
-                    <p class="director">Director: <span th:text="${movie.director}">Director Name</span></p>
-                    <p class="year">Year: <span th:text="${movie.year}">2023</span></p>
-                    <p class="genre">Genre: <span th:text="${movie.genre}">Drama</span></p>
-                    <p class="duration">Duration: <span th:text="${movie.duration}">120</span> minutes</p>
+                    <p class="director">Captain (Director): <span th:text="${movie.director}">Director Name</span></p>
+                    <p class="year">Year of Adventure: <span th:text="${movie.year}">2023</span></p>
+                    <p class="genre">Type of Quest: <span th:text="${movie.genre}">Drama</span></p>
+                    <p class="duration">Journey Length: <span th:text="${movie.duration}">120</span> minutes</p>
                 </div>
                 <div class="rating">
                     <span class="stars">
@@ -26,9 +82,64 @@
                     </span>
                     <span class="rating-score" th:text="${#numbers.formatDecimal(movie.imdbRating, 1, 1)} + '/5'">5.0/5</span>
                 </div>
-                <a th:href="@{/movies/{id}/details(id=${movie.id})}" class="details-btn">View Details</a>
+                <a th:href="@{/movies/{id}/details(id=${movie.id})}" class="details-btn">⚓ View Treasure Details</a>
             </div>
         </div>
+        
+        <!-- No Movies Message (when no movies at all) -->
+        <div th:if="${movies == null or movies.empty}" class="search-message no-results">
+            <p>🏴‍☠️ Arrr! Our treasure chest be empty, matey!</p>
+            <p>No movies found to display. Check back later for new adventures!</p>
+        </div>
+        
+        <!-- Available Genres Helper (shown when not searching) -->
+        <div th:if="${!searchPerformed and allGenres != null and !allGenres.empty}" 
+             style="margin-top: 40px; text-align: center; color: #DAA520;">
+            <p style="margin-bottom: 15px; font-size: 1.1rem; font-weight: 600;">
+                🗺️ Available Adventure Types (Genres):
+            </p>
+            <p style="font-style: italic; line-height: 1.8;">
+                <span th:each="genre, iterStat : ${allGenres}">
+                    <span th:text="${genre}">Genre</span><span th:if="${!iterStat.last}">, </span>
+                </span>
+            </p>
+        </div>
     </div>
+    
+    <!-- JavaScript for enhanced user experience -->
+    <script>
+        // Add some pirate flair to form interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInputs = document.querySelectorAll('.search-input');
+            const searchForm = document.querySelector('.search-form');
+            
+            // Add focus effects
+            searchInputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.style.transform = 'scale(1.02)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+            
+            // Add submission feedback
+            searchForm.addEventListener('submit', function() {
+                const submitBtn = document.querySelector('.search-btn[type="submit"]');
+                submitBtn.innerHTML = '🔍 Searching for treasure...';
+                submitBtn.disabled = true;
+            });
+            
+            // Auto-focus first empty input if search was performed with errors
+            const hasError = document.querySelector('.search-message.error');
+            if (hasError) {
+                const firstEmptyInput = Array.from(searchInputs).find(input => !input.value);
+                if (firstEmptyInput) {
+                    firstEmptyInput.focus();
+                }
+            }
+        });
+    </script>
 </body>
 </html>
